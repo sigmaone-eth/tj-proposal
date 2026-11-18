@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-TsQyRTnfFKYVhLC1TZUwloXZK8J0dLtj6vO0tfonHoA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-vCAUzUqJbH86vxZPAm0BFMpR6WyjySWG7Y5Blptcrtc='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Noore Photo Picks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,8 +90,6 @@ h1 { font-family: var(--head); font-weight: 500; font-size: clamp(28px, 5vw, 46p
 .pick { border: 1px solid var(--line); background: none; border-radius: 8px; padding: 7px 9px; font-size: 11px; color: var(--muted); text-align: left; }
 .pick[aria-pressed="true"] { border-color: var(--fg); color: var(--fg); }
 
-.copy-block { margin-top: 48px; display: grid; gap: 10px; }
-.copy-block p { margin: 0; color: var(--muted); }
 textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; background: var(--raise); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: inherit; }
 
 .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--scrim); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
@@ -104,7 +102,6 @@ textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; ba
 .counts { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .primary { background: var(--fg); color: var(--bg); border: 1px solid var(--fg); border-radius: 999px; padding: 9px 18px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .primary:hover { background: var(--bg); color: var(--fg); }
-.copy-out { margin-top: 4px; min-height: 180px; }
 @media (max-width: 560px) {
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 10px; }
   .filters { margin-left: 0; }
@@ -119,6 +116,7 @@ textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; ba
   <div class="brand">Noore Studios <span class="dash" aria-hidden="true"></span><em>Photo picks</em></div>
   <h1>Sort the work, then pair it for Selected Work</h1>
   <p class="lede">Hi TJ. Every photo you sent is here. In <b>All photos</b>, put each one in Editorial or Branding, or cut it. The pairs are picked there too: tap <b>+ Selected Work</b> on the ones you want on the main page, and they fill the pairs in the order you tap them (the first is Pair 1 left, the second Pair 1 right, the third starts Pair 2). In <b>Selected Work pairs</b>, check them two per row, exactly as the site shows them.</p>
+  <p class="lede"><b>When you're done:</b> everything saves automatically as you go, so there's nothing to send. Just reply to Estefano's email to say your picks are final. You can come back and change them anytime before then.</p>
 </header>
 
 <nav class="tabs wrap" aria-label="Views">
@@ -142,17 +140,12 @@ textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; ba
     <div class="grid" id="grid"></div>
   </section>
 
-  <section class="copy-block" id="copy-wrap" hidden>
-    <p>Copying was blocked here. Select this text and paste it into your reply to Estefano:</p>
-    <textarea id="copy-out" class="copy-out" readonly></textarea>
-  </section>
 </main>
 
 <div class="bar">
   <div class="wrap">
     <span class="status" id="status" data-state="idle" role="status">Your picks save on this device as you go.</span>
     <span class="counts" id="counts"></span>
-    <button class="primary" id="copy">Copy my picks</button>
   </div>
 </div>
 
@@ -162,7 +155,7 @@ const PHOTOS = [{"id":"c4335530-6b04-456a-bb3d-320cb64bd384","original":"C433553
 const FIRST_PASS = []; // TJ builds Selected Work from scratch (Nov 17).
 const LABEL = { editorial: 'Editorial', branding: 'Branding', cut: 'Cut' };
 const LOCAL_KEY = 'noore-photo-picks-v2';
-const LOCAL_MSG = "Saved on this device only. When you're done, tap Copy my picks and paste them into your reply to Estefano.";
+const LOCAL_MSG = "Saved on this device only. Open the exact link from Estefano's email so your picks reach him.";
 const byId = new Map(PHOTOS.map(p => [p.id, p]));
 // Second batch first, then the first batch; each keeps TJ's shoot grouping.
 const ORDER = [...PHOTOS.filter(p => p.batch === 2), ...PHOTOS.filter(p => p.batch === 1)];
@@ -254,7 +247,6 @@ let key = null, online = false, saving = false, again = false;
 try { key = new URLSearchParams(location.hash.slice(1)).get('k') || localStorage.getItem(KEY_STORE); } catch {}
 if (key) { try { localStorage.setItem(KEY_STORE, key); } catch {} }
 const when = iso => new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-function showCopy(on) { $('copy').hidden = !on; }
 
 function scheduleSave(delay = 600) {
   saveLocal();
@@ -281,19 +273,6 @@ async function push() {
   }
 }
 addEventListener('pagehide', () => { if (online && dirty) { clearTimeout(saveTimer); push(); } });
-
-function summary() {
-  const lines = ['Noore Studios: photo picks', '', 'SELECTED WORK (two per row, in order)'];
-  for (let i = 0; i < state.sel.length; i += 2) {
-    const a = byId.get(state.sel[i]), b = byId.get(state.sel[i + 1]);
-    lines.push(`${i / 2 + 1}. ${short(a)} + ${b ? short(b) : '(needs a partner)'}`);
-  }
-  for (const k of ['editorial', 'branding', 'cut']) {
-    const ids = ORDER.filter(p => state.cat[p.id] === k).map(short);
-    lines.push('', `${LABEL[k].toUpperCase()} (${ids.length})`, ids.join(', ') || '(none)');
-  }
-  return lines.join('\n');
-}
 
 // ---- Events
 document.addEventListener('click', e => {
@@ -326,19 +305,10 @@ document.addEventListener('click', e => {
 });
 
 
-$('copy').addEventListener('click', () => {
-  const text = summary();
-  const fallback = () => { $('copy-wrap').hidden = false; const o = $('copy-out'); o.value = text; o.focus(); o.select(); setStatus('Select the text under Notes and paste it into your reply to Estefano.', 'local'); };
-  try {
-    navigator.clipboard.writeText(text).then(() => setStatus('Copied. Paste it into your reply to Estefano.', 'saved'), fallback);
-  } catch { fallback(); }
-});
-
-// ---- Start: this device's copy first, then Estefano's store when the link has its key.
+// ---- Start: this device's backup first, then Estefano's store when the link has its key.
 try { const v = localStorage.getItem(LOCAL_KEY); if (v) state = clean(JSON.parse(v)); } catch {}
 try { const v = localStorage.getItem(LOCAL_KEY + '-view'); if (v === 'all') document.getElementById('tab-all').click(); } catch {}
 render();
-showCopy(true);
 if (!key) {
   setStatus(LOCAL_MSG, 'local');
 } else {
@@ -350,7 +320,6 @@ if (!key) {
       if (!res.ok) throw new Error(String(res.status));
       const out = await res.json();
       online = true;
-      showCopy(false);
       if (dirty) { scheduleSave(0); return; }
       if (out.data) { state = clean(out.data); saveLocal(); render(); setStatus(`Saved for Estefano · last change ${when(out.updatedAt)}`, 'saved'); }
       else setStatus('Your picks save for Estefano as you go.', 'idle');
