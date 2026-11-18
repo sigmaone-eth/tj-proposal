@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-vCAUzUqJbH86vxZPAm0BFMpR6WyjySWG7Y5Blptcrtc='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-OjmcKOdhvFd0/f+FH0onClQibYSTDfAswkWi4dAFeCk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Noore Photo Picks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,6 +38,8 @@ header { display: grid; gap: 14px; padding-block: 40px 28px; }
 h1 { font-family: var(--head); font-weight: 500; font-size: clamp(28px, 5vw, 46px); line-height: 1.05; letter-spacing: -.02em; margin: 10px 0 0; text-wrap: balance; }
 .lede { max-width: 64ch; color: var(--muted); margin: 0; }
 .lede b { color: var(--fg); font-weight: 400; }
+.viewbar { margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 10px max(16px, env(safe-area-inset-left, 0px)); background: var(--fg); color: var(--bg); font-size: 12px; text-align: center; }
+body.view-only .seg, body.view-only .pick, body.view-only [data-act="swap"], body.view-only [data-act="remove"], body.view-only .lede, body.view-only .hint { display: none !important; }
 
 .tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding-block: 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
 .tab { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 7px 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -112,10 +114,11 @@ textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; ba
 </style>
 </head>
 <body>
+<div class="viewbar" id="viewbar" hidden>View only · TJ's current picks. This page updates on its own; nothing here can change them.</div>
 <header class="wrap">
   <div class="brand">Noore Studios <span class="dash" aria-hidden="true"></span><em>Photo picks</em></div>
   <h1>Sort the work, then pair it for Selected Work</h1>
-  <p class="lede">Hi TJ. Every photo you sent is here. In <b>All photos</b>, put each one in Editorial or Branding, or cut it. The pairs are picked there too: tap <b>+ Selected Work</b> on the ones you want on the main page, and they fill the pairs in the order you tap them (the first is Pair 1 left, the second Pair 1 right, the third starts Pair 2). In <b>Selected Work pairs</b>, check them two per row, exactly as the site shows them.</p>
+  <p class="lede">Hi TJ. Every photo you sent is here. In <b>All photos</b>, put each one in Editorial or Branding, or cut it, and tap <b>+ Selected Work</b> on the ones you want on the main page. In <b>Selected Work pairs</b>, check them two per row, in the order you want them displayed on the site.</p>
   <p class="lede"><b>When you're done:</b> everything saves automatically as you go, so there's nothing to send. Just reply to Estefano's email to say your picks are final. You can come back and change them anytime before then.</p>
 </header>
 
@@ -183,7 +186,7 @@ function setStatus(text, s) { statusEl.textContent = text; statusEl.dataset.stat
 
 function img(p, eager, sizes = '(max-width: 560px) 46vw, 220px') {
   const wide = p.width > p.height ? ' class="wide"' : '';
-  return `<img${wide} src="photos/${p.id}-800.webp" srcset="photos/${p.id}-800.webp 800w, photos/${p.id}-1600.webp 1600w, photos/${p.id}-2400.webp 2400w" sizes="${sizes}" alt="${p.shoot}, ${short(p)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" width="${p.width}" height="${p.height}">`;
+  return `<img${wide} src="photos/${p.id}-800.webp" srcset="photos/${p.id}-800.webp 800w, photos/${p.id}-1600.webp 1600w" sizes="${sizes}" alt="${p.shoot}, ${short(p)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" width="${p.width}" height="${p.height}">`;
 }
 
 function renderPairs() {
@@ -193,7 +196,7 @@ function renderPairs() {
     const slot = (id, i) => {
       if (!id) return `<div class="slot empty"><div class="frame">${sel.length ? 'Needs a partner. Pick one in All photos.' : (i === 0 ? 'No pairs yet. In All photos, tap + Selected Work to start Pair 1.' : 'The second photo you pick goes here.')}</div></div>`;
       const p = byId.get(id);
-      return `<div class="slot"><div class="frame">${img(p, r < 2, '(max-width: 860px) 96vw, 820px')}</div>
+      return `<div class="slot"><div class="frame">${img(p, r < 2, '(max-width: 860px) 48vw, 410px')}</div>
         <div class="slot-foot"><span class="name">${short(p)} · ${p.shoot}</span>
           <button class="icon" data-act="remove" data-i="${i}" aria-label="Take ${short(p)} off Selected Work">×</button>
         </div></div>`;
@@ -232,6 +235,7 @@ function render() {
 }
 
 function change(fn) {
+  if (VIEW_ONLY) return;
   fn(state);
   dirty = true;
   render();
@@ -243,9 +247,14 @@ function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(stat
 // ---- Saving: to Estefano's picks store when the link has its key, always to this device as a backup.
 const API = 'https://noore-api.estefanogomez23.workers.dev/picks';
 const KEY_STORE = 'noore-photo-picks-key';
-let key = null, online = false, saving = false, again = false;
-try { key = new URLSearchParams(location.hash.slice(1)).get('k') || localStorage.getItem(KEY_STORE); } catch {}
+let key = null, viewKey = null, online = false, saving = false, again = false;
+try {
+  const h = new URLSearchParams(location.hash.slice(1));
+  viewKey = h.get('v');
+  if (!viewKey) key = h.get('k') || localStorage.getItem(KEY_STORE);
+} catch {}
 if (key) { try { localStorage.setItem(KEY_STORE, key); } catch {} }
+const VIEW_ONLY = !!viewKey;
 const when = iso => new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 function scheduleSave(delay = 600) {
@@ -306,10 +315,29 @@ document.addEventListener('click', e => {
 
 
 // ---- Start: this device's backup first, then Estefano's store when the link has its key.
-try { const v = localStorage.getItem(LOCAL_KEY); if (v) state = clean(JSON.parse(v)); } catch {}
+if (!VIEW_ONLY) { try { const v = localStorage.getItem(LOCAL_KEY); if (v) state = clean(JSON.parse(v)); } catch {} }
 try { const v = localStorage.getItem(LOCAL_KEY + '-view'); if (v === 'all') document.getElementById('tab-all').click(); } catch {}
 render();
-if (!key) {
+if (VIEW_ONLY) {
+  // Estefano's read-only view: fetch TJ's picks now and every 15 seconds while the tab is open.
+  document.body.classList.add('view-only');
+  $('viewbar').hidden = false;
+  document.title = 'TJ’s picks · view only';
+  let last = null;
+  const pull = async () => {
+    try {
+      const res = await fetch(API, { headers: { 'x-picks-key': viewKey } });
+      if (res.status === 401) { setStatus('This view link is missing part of its key.', 'error'); return; }
+      if (!res.ok) throw new Error(String(res.status));
+      const out = await res.json();
+      if (out.updatedAt !== last) { last = out.updatedAt; state = out.data ? clean(out.data) : freshState(); render(); }
+      setStatus(out.updatedAt ? `TJ's last change: ${when(out.updatedAt)}` : 'TJ hasn’t made any picks yet.', out.updatedAt ? 'saved' : 'idle');
+    } catch { setStatus('Can’t reach the picks store right now; trying again shortly.', 'error'); }
+  };
+  pull();
+  setInterval(() => { if (!document.hidden) pull(); }, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+} else if (!key) {
   setStatus(LOCAL_MSG, 'local');
 } else {
   setStatus('Loading your saved picks…', 'idle');
@@ -322,7 +350,7 @@ if (!key) {
       online = true;
       if (dirty) { scheduleSave(0); return; }
       if (out.data) { state = clean(out.data); saveLocal(); render(); setStatus(`Saved for Estefano · last change ${when(out.updatedAt)}`, 'saved'); }
-      else setStatus('Your picks save for Estefano as you go.', 'idle');
+      else { state = freshState(); saveLocal(); render(); setStatus('Your picks save for Estefano as you go.', 'idle'); }
     } catch {
       setStatus('Can’t reach the picks store right now. Keep going; your picks stay on this device until it connects.', 'error');
     }
