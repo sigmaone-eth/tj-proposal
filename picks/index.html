@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-h/L5eiGHi89o871h3I8dMZ8TFxLenGiGjluijJyEKgU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-TsQyRTnfFKYVhLC1TZUwloXZK8J0dLtj6vO0tfonHoA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Noore Photo Picks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -162,7 +162,7 @@ const PHOTOS = [{"id":"c4335530-6b04-456a-bb3d-320cb64bd384","original":"C433553
 const FIRST_PASS = []; // TJ builds Selected Work from scratch (Nov 17).
 const LABEL = { editorial: 'Editorial', branding: 'Branding', cut: 'Cut' };
 const LOCAL_KEY = 'noore-photo-picks-v2';
-const LOCAL_MSG = "Saved on this device. When you're done, tap Copy my picks and paste them into your reply to Estefano.";
+const LOCAL_MSG = "Saved on this device only. When you're done, tap Copy my picks and paste them into your reply to Estefano.";
 const byId = new Map(PHOTOS.map(p => [p.id, p]));
 // Second batch first, then the first batch; each keeps TJ's shoot grouping.
 const ORDER = [...PHOTOS.filter(p => p.batch === 2), ...PHOTOS.filter(p => p.batch === 1)];
@@ -247,10 +247,40 @@ function change(fn) {
 
 // ---- Saving: the shared store when this view can write it, this device otherwise.
 function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {} }
-function scheduleSave(delay = 400) {
+// ---- Saving: to Estefano's picks store when the link has its key, always to this device as a backup.
+const API = 'https://noore-api.estefanogomez23.workers.dev/picks';
+const KEY_STORE = 'noore-photo-picks-key';
+let key = null, online = false, saving = false, again = false;
+try { key = new URLSearchParams(location.hash.slice(1)).get('k') || localStorage.getItem(KEY_STORE); } catch {}
+if (key) { try { localStorage.setItem(KEY_STORE, key); } catch {} }
+const when = iso => new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+function showCopy(on) { $('copy').hidden = !on; }
+
+function scheduleSave(delay = 600) {
+  saveLocal();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { saveLocal(); dirty = false; setStatus(LOCAL_MSG, 'saved'); }, delay);
+  // Before the store answers, keep the change marked so it is sent once it connects.
+  if (!online) { if (!key) dirty = false; setStatus(key ? 'Connecting to the picks store…' : LOCAL_MSG, key ? 'idle' : 'local'); return; }
+  setStatus('Saving…', 'idle');
+  saveTimer = setTimeout(push, delay);
 }
+async function push() {
+  if (saving) { again = true; return; }
+  saving = true; again = false;
+  try {
+    const res = await fetch(API, { method: 'PUT', headers: { 'content-type': 'application/json', 'x-picks-key': key }, body: JSON.stringify({ cat: state.cat, sel: state.sel }), keepalive: true });
+    if (!res.ok) throw new Error(String(res.status));
+    const out = await res.json();
+    dirty = false;
+    setStatus(`Saved for Estefano · ${when(out.updatedAt)}`, 'saved');
+  } catch {
+    setStatus('Couldn’t save just now. Your picks are kept on this device and will save on your next change.', 'error');
+  } finally {
+    saving = false;
+    if (again) push();
+  }
+}
+addEventListener('pagehide', () => { if (online && dirty) { clearTimeout(saveTimer); push(); } });
 
 function summary() {
   const lines = ['Noore Studios: photo picks', '', 'SELECTED WORK (two per row, in order)'];
@@ -304,13 +334,31 @@ $('copy').addEventListener('click', () => {
   } catch { fallback(); }
 });
 
-// ---- Start: this device's copy first, then the shared store if this view has one.
+// ---- Start: this device's copy first, then Estefano's store when the link has its key.
 try { const v = localStorage.getItem(LOCAL_KEY); if (v) state = clean(JSON.parse(v)); } catch {}
 try { const v = localStorage.getItem(LOCAL_KEY + '-view'); if (v === 'all') document.getElementById('tab-all').click(); } catch {}
 render();
-setStatus('Your picks save on this device as you go. Use the same phone or computer each time.', 'idle');
-
-// GitHub Pages copy: picks stay in this browser; TJ sends them with Copy my picks.
+showCopy(true);
+if (!key) {
+  setStatus(LOCAL_MSG, 'local');
+} else {
+  setStatus('Loading your saved picks…', 'idle');
+  (async () => {
+    try {
+      const res = await fetch(API, { headers: { 'x-picks-key': key } });
+      if (res.status === 401) { setStatus('This link is missing part of its key, so picks stay on this device. Use the exact link from Estefano’s email.', 'error'); return; }
+      if (!res.ok) throw new Error(String(res.status));
+      const out = await res.json();
+      online = true;
+      showCopy(false);
+      if (dirty) { scheduleSave(0); return; }
+      if (out.data) { state = clean(out.data); saveLocal(); render(); setStatus(`Saved for Estefano · last change ${when(out.updatedAt)}`, 'saved'); }
+      else setStatus('Your picks save for Estefano as you go.', 'idle');
+    } catch {
+      setStatus('Can’t reach the picks store right now. Keep going; your picks stay on this device until it connects.', 'error');
+    }
+  })();
+}
 </script>
 </body>
 </html>
