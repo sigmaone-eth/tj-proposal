@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-OjmcKOdhvFd0/f+FH0onClQibYSTDfAswkWi4dAFeCk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-qrcam/1BqJwKQGIRHpEtJMnQrUIWwqotu6mg8n688xQ='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Noore Photo Picks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -255,6 +255,8 @@ try {
 } catch {}
 if (key) { try { localStorage.setItem(KEY_STORE, key); } catch {} }
 const VIEW_ONLY = !!viewKey;
+// Switching between TJ's link and the view link in the same tab only changes the #part: reload so the right mode starts.
+addEventListener('hashchange', () => location.reload());
 const when = iso => new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 function scheduleSave(delay = 600) {
@@ -331,7 +333,7 @@ if (VIEW_ONLY) {
       if (!res.ok) throw new Error(String(res.status));
       const out = await res.json();
       if (out.updatedAt !== last) { last = out.updatedAt; state = out.data ? clean(out.data) : freshState(); render(); }
-      setStatus(out.updatedAt ? `TJ's last change: ${when(out.updatedAt)}` : 'TJ hasn’t made any picks yet.', out.updatedAt ? 'saved' : 'idle');
+      setStatus(out.updatedAt ? `View only · TJ's last change: ${when(out.updatedAt)}` : 'View only · TJ hasn’t made any picks yet.', out.updatedAt ? 'saved' : 'idle');
     } catch { setStatus('Can’t reach the picks store right now; trying again shortly.', 'error'); }
   };
   pull();
