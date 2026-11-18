@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-q9zh0QF2GWwBs+MPDNiigdgMHXATVF7r1XXVv5Uncak='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Noore Photo Picks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: the site's own black room. Header, two views (Selected Work pairs / every photo), notes, a pinned status bar. */
+:root {
+  --bg: #000; --fg: #f2efe9; --muted: #8d8a85; --line: #2a2826; --tile: #111; --raise: #0d0c0b;
+  --ed: #c9b48f; --on-ed: #14110c; --br: #d9a3a8; --on-br: #1a0f10; --cut: #55524e;
+  --ok: #8fbf8a; --warn: #c9b48f; --bad: #e07a6a; --scrim: rgb(0 0 0 / .86); --tag: rgb(0 0 0 / .62);
+  --head: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --body: 'Space Mono', ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--fg); overflow-x: clip; }
+body { font-family: var(--body); font-size: 13px; line-height: 1.6; -webkit-font-smoothing: antialiased; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 110px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; }
+
+header { display: grid; gap: 14px; padding-block: 40px 28px; }
+.brand { font-family: var(--head); font-weight: 600; font-size: 14px; letter-spacing: .04em; display: flex; align-items: center; gap: 14px; text-transform: uppercase; }
+.brand em { font-family: var(--serif); font-weight: 400; font-size: 24px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.brand .dash { width: 32px; height: 1px; background: var(--muted); opacity: .6; }
+h1 { font-family: var(--head); font-weight: 500; font-size: clamp(28px, 5vw, 46px); line-height: 1.05; letter-spacing: -.02em; margin: 10px 0 0; text-wrap: balance; }
+.lede { max-width: 64ch; color: var(--muted); margin: 0; }
+.lede b { color: var(--fg); font-weight: 400; }
+
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding-block: 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.tab { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 7px 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tab .n { opacity: .6; margin-left: 4px; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.chip { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 4px 11px; font-size: 11px; color: var(--muted); }
+.chip[aria-pressed="true"] { color: var(--fg); border-color: var(--fg); }
+
+.view { padding-top: 28px; }
+.hint { color: var(--muted); margin: 0 0 24px; max-width: 70ch; }
+.hint b { color: var(--fg); font-weight: 400; }
+
+/* Pairs: exactly how Selected Work reads on the site, two photos per row. */
+.pairs { display: grid; gap: 44px; }
+.pair { display: grid; gap: 10px; width: min(100%, 820px); margin: 0 auto; }
+.pair-head { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.pair-head .grow { flex: 1; }
+.pair-row { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 1.4vw, 18px); }
+.slot { display: grid; gap: 6px; min-width: 0; align-content: start; }
+.frame { aspect-ratio: 2 / 3; max-width: 100%; background: var(--tile); overflow: hidden; }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame img.wide { object-fit: contain; }
+.slot.empty .frame { display: grid; place-items: center; border: 1px dashed var(--line); background: none; color: var(--muted); text-align: center; padding: 16px; font-size: 12px; }
+.slot-foot { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.slot-foot .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; }
+.icon { border: 1px solid var(--line); background: none; border-radius: 6px; width: 28px; height: 28px; display: inline-grid; place-items: center; font-size: 13px; line-height: 1; color: var(--muted); padding: 0; flex: none; }
+.icon:hover:not(:disabled) { color: var(--fg); border-color: var(--fg); }
+.icon:disabled { opacity: .3; cursor: default; }
+.text-btn { border: 1px solid var(--line); background: none; border-radius: 6px; height: 28px; padding: 0 10px; font-size: 11px; color: var(--muted); }
+.text-btn:hover { color: var(--fg); border-color: var(--fg); }
+
+/* All photos */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 24px 14px; }
+.card { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.card .frame { position: relative; }
+.card .frame img { transition: opacity .2s ease, filter .2s ease; }
+.card.is-cut .frame img { opacity: .25; filter: grayscale(1); }
+.badge, .new { position: absolute; top: 8px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+.badge { left: 8px; background: var(--fg); color: var(--bg); }
+.new { right: 8px; background: var(--tag); color: var(--fg); }
+.meta { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--muted); min-width: 0; }
+.meta span:first-child { color: var(--fg); flex: none; }
+.meta span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seg { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.2fr) minmax(0, .8fr); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { min-width: 0; background: none; border: 0; padding: 8px 2px; font-size: 10px; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"][data-cat="editorial"] { background: var(--ed); color: var(--on-ed); }
+.seg button[aria-pressed="true"][data-cat="branding"] { background: var(--br); color: var(--on-br); }
+.seg button[aria-pressed="true"][data-cat="cut"] { background: var(--cut); color: var(--fg); }
+.pick { border: 1px solid var(--line); background: none; border-radius: 8px; padding: 7px 9px; font-size: 11px; color: var(--muted); text-align: left; }
+.pick[aria-pressed="true"] { border-color: var(--fg); color: var(--fg); }
+
+.notes { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.notes label { font-family: var(--head); font-size: 20px; }
+.notes p { margin: 0; color: var(--muted); max-width: 70ch; }
+textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; background: var(--raise); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: inherit; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--scrim); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.bar .wrap { display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap; }
+.status { flex: 1; min-width: 200px; color: var(--muted); font-size: 12px; }
+.status::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 8px; vertical-align: 1px; }
+.status[data-state="saved"]::before { background: var(--ok); }
+.status[data-state="local"]::before { background: var(--warn); }
+.status[data-state="error"]::before { background: var(--bad); }
+.counts { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.primary { background: var(--fg); color: var(--bg); border: 1px solid var(--fg); border-radius: 999px; padding: 9px 18px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.primary:hover { background: var(--bg); color: var(--fg); }
+.copy-out { margin-top: 4px; min-height: 180px; }
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 10px; }
+  .filters { margin-left: 0; }
+  .slot-foot .name { display: none; }
+  .counts { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="brand">Noore Studios <span class="dash" aria-hidden="true"></span><em>Photo picks</em></div>
+  <h1>Sort the work, then pair it for Selected Work</h1>
+  <p class="lede">Hi TJ. Every photo you sent is here. In <b>All photos</b>, put each one in Editorial or Branding, or cut it. The pairs are picked there too: tap <b>+ Selected Work</b> on the ones you want on the main page, and they fill the pairs in the order you tap them (the first is Pair 1 left, the second Pair 1 right, the third starts Pair 2). In <b>Selected Work pairs</b>, check them two per row, exactly as the site shows them.</p>
+</header>
+
+<nav class="tabs wrap" aria-label="Views">
+  <button class="tab" id="tab-pairs" role="tab" aria-selected="true" data-view="pairs">Selected Work pairs<span class="n" id="n-pairs"></span></button>
+  <button class="tab" id="tab-all" role="tab" aria-selected="false" data-view="all">All photos<span class="n" id="n-all"></span></button>
+  <div class="filters" id="filters" hidden>
+    <button class="chip" data-filter="all" aria-pressed="true">All</button>
+    <button class="chip" data-filter="b2" aria-pressed="false">Second batch</button>
+    <button class="chip" data-filter="b1" aria-pressed="false">First batch</button>
+    <button class="chip" data-filter="editorial" aria-pressed="false">Editorial</button>
+    <button class="chip" data-filter="branding" aria-pressed="false">Branding</button>
+    <button class="chip" data-filter="cut" aria-pressed="false">Cut</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section class="view" id="view-pairs">
+    <p class="hint">Pairs are made in <b>All photos</b>. Tap <b>+ Selected Work</b> on a photo and it becomes the left side of <b>Pair 1</b>. The next photo you pick fills the right side of Pair 1, the one after that starts Pair 2, and so on. Pairs show here top to bottom, in the order visitors scroll. Use <b>⇄ Swap</b> to switch a pair's left and right, and <b>×</b> to take a photo out.</p>
+    <div class="pairs" id="pairs"></div>
+  </section>
+  <section class="view" id="view-all" hidden>
+    <p class="hint">Put each photo in Editorial or Branding, or <b>Cut</b> it to keep it off the site. Tap <b>+ Selected Work</b> to add it to the next open spot in your pairs: the first photo starts Pair 1, the second completes it, the third starts Pair 2. “New” marks the second batch. Cut photos stay here, greyed out, in case you change your mind.</p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="notes">
+    <label for="notes">Notes for Estefano</label>
+    <p>Anything else: a photo that should be the first thing people see, a crop, a shoot name, a pair you're unsure about.</p>
+    <textarea id="notes" placeholder="e.g. Open with the feathers pair. The red activewear shoot needs the brand's name."></textarea>
+    <div id="copy-wrap" hidden>
+      <p>Copying was blocked here. Select this text and paste it into your reply to Estefano:</p>
+      <textarea id="copy-out" class="copy-out" readonly></textarea>
+    </div>
+  </section>
+</main>
+
+<div class="bar">
+  <div class="wrap">
+    <span class="status" id="status" data-state="idle" role="status">Your picks save on this device as you go.</span>
+    <span class="counts" id="counts"></span>
+    <button class="primary" id="copy">Copy my picks</button>
+  </div>
+</div>
+
+<script>
+const PHOTOS = [{"id":"c4335530-6b04-456a-bb3d-320cb64bd384","original":"C4335530-6B04-456A-BB3D-320CB64BD384.jpeg","category":"editorial","shoot":"Gold angel","batch":1,"width":1179,"height":1771},{"id":"img-1648","original":"IMG_1648.JPG","category":"editorial","shoot":"Gold angel","batch":1,"width":1600,"height":2400},{"id":"dsc00159","original":"DSC00159.jpg","category":"editorial","shoot":"Blue feathers","batch":1,"width":1600,"height":2400},{"id":"img-7614","original":"IMG_7614.JPG","category":"editorial","shoot":"Blue feathers","batch":1,"width":1600,"height":2400},{"id":"img-2303","original":"IMG_2303.JPG","category":"editorial","shoot":"Blue hair + speakers","batch":1,"width":1600,"height":2400},{"id":"img-2307","original":"IMG_2307.JPG","category":"editorial","shoot":"Blue hair + speakers","batch":1,"width":1600,"height":2400},{"id":"img-2398","original":"IMG_2398.JPG","category":"editorial","shoot":"Blue hair + speakers","batch":1,"width":1600,"height":2400},{"id":"img-5427","original":"IMG_5427.JPG","category":"editorial","shoot":"Black fur + gloves","batch":1,"width":1600,"height":2400},{"id":"img-5530","original":"IMG_5530.JPG","category":"editorial","shoot":"Black fur + gloves","batch":1,"width":1600,"height":2400},{"id":"img-7574","original":"IMG_7574.JPG","category":"editorial","shoot":"Brown coat","batch":1,"width":1600,"height":2400},{"id":"img-8131","original":"IMG_8131.JPG","category":"editorial","shoot":"Brown coat","batch":1,"width":1600,"height":2400},{"id":"img-7725","original":"IMG_7725.JPG","category":"editorial","shoot":"Painted figures","batch":1,"width":1600,"height":2400},{"id":"img-9104","original":"IMG_9104.JPG","category":"editorial","shoot":"Painted figures","batch":1,"width":1600,"height":2400},{"id":"img-4964","original":"IMG_4964.jpg","category":"editorial","shoot":"Burlesque","batch":1,"width":1600,"height":2400},{"id":"img-5057","original":"IMG_5057.JPG","category":"editorial","shoot":"Burlesque","batch":1,"width":1600,"height":2400},{"id":"img-5541","original":"IMG_5541.JPG","category":"editorial","shoot":"Glass cases","batch":1,"width":1920,"height":2400},{"id":"img-5372","original":"IMG_5372.JPG","category":"editorial","shoot":"Sequin gown","batch":1,"width":1600,"height":2400},{"id":"img-3628","original":"IMG_3628.JPG","category":"editorial","shoot":"Pink backdrop","batch":1,"width":1600,"height":2400},{"id":"img-3694","original":"IMG_3694.jpg","category":"editorial","shoot":"Flying prints","batch":1,"width":1600,"height":2400},{"id":"img-1419","original":"IMG_1419.JPG","category":"branding","shoot":"Lip gloss / beauty","batch":1,"width":1600,"height":2400},{"id":"img-1424","original":"IMG_1424.JPG","category":"branding","shoot":"Lip gloss / beauty","batch":1,"width":1600,"height":2400},{"id":"img-1427","original":"IMG_1427.JPG","category":"branding","shoot":"Lip gloss / beauty","batch":1,"width":1600,"height":2400},{"id":"img-6269","original":"IMG_6269.JPG","category":"branding","shoot":"Blonde wigs","batch":1,"width":1600,"height":2400},{"id":"img-7286","original":"IMG_7286.JPG","category":"branding","shoot":"Blonde wigs","batch":1,"width":1600,"height":2400},{"id":"img-8132","original":"IMG_8132.JPG","category":"branding","shoot":"Blonde wigs","batch":1,"width":1600,"height":2400},{"id":"img-9498","original":"IMG_9498.JPG","category":"branding","shoot":"Pink drapes / hair","batch":1,"width":1600,"height":2400},{"id":"img-9621","original":"IMG_9621.JPG","category":"branding","shoot":"Pink drapes / hair","batch":1,"width":1600,"height":2400},{"id":"img-9622","original":"IMG_9622.JPG","category":"branding","shoot":"Pink drapes / hair","batch":1,"width":1600,"height":2400},{"id":"img-9641","original":"IMG_9641.JPG","category":"branding","shoot":"Pink drapes / hair","batch":1,"width":1600,"height":2400},{"id":"img-8976","original":"IMG_8976.jpeg","category":"branding","shoot":"Lash box","batch":2,"width":1600,"height":2400},{"id":"img-9119","original":"IMG_9119.JPG","category":"branding","shoot":"Corset / hair","batch":1,"width":1600,"height":2400},{"id":"img-1081","original":"IMG_1081.JPG","category":"branding","shoot":"Curly hair, sky","batch":1,"width":1920,"height":2400},{"id":"img-3085","original":"IMG_3085.JPG","category":"editorial","shoot":"Blush compact","batch":1,"width":1600,"height":2400},{"id":"img-3086","original":"IMG_3086.JPG","category":"editorial","shoot":"Blush compact","batch":1,"width":1600,"height":2400},{"id":"img-4197","original":"IMG_4197.JPG","category":"branding","shoot":"White lace","batch":1,"width":1600,"height":2400},{"id":"img-6606","original":"IMG_6606.JPG","category":"branding","shoot":"Long ponytail","batch":1,"width":1600,"height":2400},{"id":"img-8973","original":"IMG_8973.JPG","category":"editorial","shoot":"Red hair","batch":1,"width":1600,"height":2400},{"id":"img-0653","original":"IMG_0653.jpeg","category":"branding","shoot":"Tracksuit","batch":2,"width":1600,"height":2400},{"id":"img-0657","original":"IMG_0657.jpeg","category":"branding","shoot":"Tracksuit","batch":2,"width":1600,"height":2400},{"id":"img-1075","original":"IMG_1075.jpeg","category":"branding","shoot":"Curly hair, sky","batch":2,"width":1600,"height":2400},{"id":"img-1437","original":"IMG_1437.jpeg","category":"branding","shoot":"Lip gloss / beauty","batch":2,"width":2400,"height":1600},{"id":"img-2202","original":"IMG_2202.jpeg","category":"editorial","shoot":"Gold angel","batch":2,"width":1560,"height":2400},{"id":"img-3604","original":"IMG_3604.jpeg","category":"editorial","shoot":"Pink backdrop","batch":2,"width":1600,"height":2400},{"id":"img-3630","original":"IMG_3630.jpeg","category":"editorial","shoot":"Pink backdrop","batch":2,"width":1600,"height":2400},{"id":"img-4193","original":"IMG_4193.jpeg","category":"branding","shoot":"White lace","batch":2,"width":1600,"height":2400},{"id":"img-7633","original":"IMG_7633.jpeg","category":"editorial","shoot":"Blue feathers","batch":2,"width":1600,"height":2400},{"id":"img-7800","original":"IMG_7800.jpeg","category":"editorial","shoot":"Blue feathers","batch":2,"width":1600,"height":2400},{"id":"img-8361","original":"IMG_8361.jpeg","category":"branding","shoot":"Lash box","batch":2,"width":1600,"height":2400},{"id":"img-8714","original":"IMG_8714.jpeg","category":"branding","shoot":"Lash box","batch":2,"width":1600,"height":2400},{"id":"img-9068","original":"IMG_9068.jpeg","category":"branding","shoot":"Lash box","batch":2,"width":1600,"height":2400},{"id":"img-7187","original":"IMG_7187.jpeg","category":"branding","shoot":"Red activewear","batch":2,"width":1600,"height":2400},{"id":"img-7191","original":"IMG_7191.jpeg","category":"branding","shoot":"Red activewear","batch":2,"width":1600,"height":2400},{"id":"img-7670","original":"IMG_7670.jpeg","category":"editorial","shoot":"Brown coat","batch":2,"width":1600,"height":2400},{"id":"img-8134","original":"IMG_8134.jpeg","category":"editorial","shoot":"Brown coat","batch":2,"width":1600,"height":2400},{"id":"img-2140","original":"IMG_2140.jpeg","category":"editorial","shoot":"Blue hair + speakers","batch":2,"width":1600,"height":2400},{"id":"img-2304","original":"IMG_2304.jpeg","category":"editorial","shoot":"Blue hair + speakers","batch":2,"width":1600,"height":2400},{"id":"img-9325","original":"IMG_9325.jpeg","category":"editorial","shoot":"White fur","batch":2,"width":1600,"height":2400},{"id":"img-9413","original":"IMG_9413.jpeg","category":"editorial","shoot":"White fur","batch":2,"width":1600,"height":2400}];
+
+const FIRST_PASS = []; // TJ builds Selected Work from scratch (Nov 17).
+const LABEL = { editorial: 'Editorial', branding: 'Branding', cut: 'Cut' };
+const LOCAL_KEY = 'noore-photo-picks-v2';
+const LOCAL_MSG = "Saved on this device. When you're done, tap Copy my picks and paste them into your reply to Estefano.";
+const byId = new Map(PHOTOS.map(p => [p.id, p]));
+// Second batch first, then the first batch; each keeps TJ's shoot grouping.
+const ORDER = [...PHOTOS.filter(p => p.batch === 2), ...PHOTOS.filter(p => p.batch === 1)];
+const short = p => p.original.replace(/\.(jpe?g)$/i, '').replace(/^C4335530-.*/, 'C4335530');
+
+function freshState() {
+  return { cat: Object.fromEntries(PHOTOS.map(p => [p.id, p.category])), sel: [...FIRST_PASS], notes: '' };
+}
+function clean(s) {
+  const base = freshState();
+  if (!s || typeof s !== 'object') return base;
+  const cat = { ...base.cat };
+  if (s.cat && typeof s.cat === 'object') for (const [k, v] of Object.entries(s.cat)) if (byId.has(k) && LABEL[v]) cat[k] = v;
+  const sel = Array.isArray(s.sel) ? [...new Set(s.sel.filter(id => byId.has(id)))] : base.sel;
+  return { cat, sel, notes: typeof s.notes === 'string' ? s.notes : '' };
+}
+
+let state = freshState();
+let view = 'pairs', filter = 'all';
+let saveTimer = null, dirty = false;
+
+const $ = id => document.getElementById(id);
+const statusEl = $('status');
+function setStatus(text, s) { statusEl.textContent = text; statusEl.dataset.state = s; }
+
+function img(p, eager, sizes = '(max-width: 560px) 46vw, 220px') {
+  const wide = p.width > p.height ? ' class="wide"' : '';
+  return `<img${wide} src="photos/${p.id}-800.webp" srcset="photos/${p.id}-800.webp 800w, photos/${p.id}-1600.webp 1600w, photos/${p.id}-2400.webp 2400w" sizes="${sizes}" alt="${p.shoot}, ${short(p)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" width="${p.width}" height="${p.height}">`;
+}
+
+function renderPairs() {
+  const sel = state.sel, rows = Math.max(1, Math.ceil(sel.length / 2)), out = [];
+  for (let r = 0; r < rows; r++) {
+    const a = sel[r * 2], b = sel[r * 2 + 1];
+    const slot = (id, i) => {
+      if (!id) return `<div class="slot empty"><div class="frame">${sel.length ? 'Needs a partner. Pick one in All photos.' : (i === 0 ? 'No pairs yet. In All photos, tap + Selected Work to start Pair 1.' : 'The second photo you pick goes here.')}</div></div>`;
+      const p = byId.get(id);
+      return `<div class="slot"><div class="frame">${img(p, r < 2, '(max-width: 860px) 96vw, 820px')}</div>
+        <div class="slot-foot"><span class="name">${short(p)} · ${p.shoot}</span>
+          <button class="icon" data-act="remove" data-i="${i}" aria-label="Take ${short(p)} off Selected Work">×</button>
+        </div></div>`;
+    };
+    out.push(`<div class="pair"><div class="pair-head"><span class="grow">Pair ${r + 1}</span>
+      <button class="text-btn" data-act="swap" data-r="${r}" ${b ? '' : 'disabled'} aria-label="Swap the two photos in pair ${r + 1}">⇄ Swap</button></div>
+      <div class="pair-row">${slot(a, r * 2)}${slot(b, r * 2 + 1)}</div></div>`);
+  }
+  $('pairs').innerHTML = out.join('');
+}
+
+function renderGrid() {
+  const list = ORDER.filter(p => filter === 'all' || (filter === 'b1' && p.batch === 1) || (filter === 'b2' && p.batch === 2) || state.cat[p.id] === filter);
+  $('grid').innerHTML = list.length ? list.map((p, i) => {
+    const c = state.cat[p.id], at = state.sel.indexOf(p.id);
+    const seg = ['editorial', 'branding', 'cut'].map(k => `<button data-act="cat" data-id="${p.id}" data-cat="${k}" aria-pressed="${c === k}">${k === 'cut' ? 'Cut' : LABEL[k]}</button>`).join('');
+    return `<div class="card${c === 'cut' ? ' is-cut' : ''}">
+      <div class="frame">${img(p, i < 8)}${at >= 0 ? `<span class="badge">Pair ${Math.floor(at / 2) + 1}</span>` : ''}${p.batch === 2 ? '<span class="new">New</span>' : ''}</div>
+      <div class="meta"><span>${short(p)}</span><span>${p.shoot}</span></div>
+      <div class="seg" role="group" aria-label="Category for ${short(p)}">${seg}</div>
+      <button class="pick" data-act="pick" data-id="${p.id}" aria-pressed="${at >= 0}">${at >= 0 ? `✓ Pair ${Math.floor(at / 2) + 1}, ${at % 2 ? 'right' : 'left'}` : '+ Selected Work'}</button>
+    </div>`;
+  }).join('') : '<p class="hint">No photos here yet.</p>';
+}
+
+function renderCounts() {
+  const n = k => PHOTOS.filter(p => state.cat[p.id] === k).length;
+  $('counts').textContent = `${n('editorial')} Editorial · ${n('branding')} Branding · ${n('cut')} cut · ${state.sel.length} on Selected Work`;
+  $('n-pairs').textContent = `(${Math.ceil(state.sel.length / 2)})`;
+  $('n-all').textContent = `(${PHOTOS.length})`;
+}
+
+function render() {
+  if (view === 'pairs') renderPairs(); else renderGrid();
+  renderCounts();
+  const notes = $('notes');
+  if (document.activeElement !== notes && notes.value !== state.notes) notes.value = state.notes;
+}
+
+function change(fn) {
+  fn(state);
+  dirty = true;
+  render();
+  scheduleSave();
+}
+
+// ---- Saving: the shared store when this view can write it, this device otherwise.
+function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state)); } catch {} }
+function scheduleSave(delay = 400) {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { saveLocal(); dirty = false; setStatus(LOCAL_MSG, 'saved'); }, delay);
+}
+
+function summary() {
+  const lines = ['Noore Studios: photo picks', '', 'SELECTED WORK (two per row, in order)'];
+  for (let i = 0; i < state.sel.length; i += 2) {
+    const a = byId.get(state.sel[i]), b = byId.get(state.sel[i + 1]);
+    lines.push(`${i / 2 + 1}. ${short(a)} + ${b ? short(b) : '(needs a partner)'}`);
+  }
+  for (const k of ['editorial', 'branding', 'cut']) {
+    const ids = ORDER.filter(p => state.cat[p.id] === k).map(short);
+    lines.push('', `${LABEL[k].toUpperCase()} (${ids.length})`, ids.join(', ') || '(none)');
+  }
+  if (state.notes.trim()) lines.push('', 'NOTES', state.notes.trim());
+  return lines.join('\n');
+}
+
+// ---- Events
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.view) {
+    view = t.dataset.view;
+    for (const b of document.querySelectorAll('.tab')) b.setAttribute('aria-selected', String(b === t));
+    $('view-pairs').hidden = view !== 'pairs';
+    $('view-all').hidden = view !== 'all';
+    $('filters').hidden = view !== 'all';
+    try { localStorage.setItem(LOCAL_KEY + '-view', view); } catch {}
+    render();
+    return;
+  }
+  if (t.dataset.filter) {
+    filter = t.dataset.filter;
+    for (const b of document.querySelectorAll('.chip')) b.setAttribute('aria-pressed', String(b === t));
+    renderGrid();
+    return;
+  }
+  const act = t.dataset.act;
+  if (!act) return;
+  const i = +t.dataset.i, r = +t.dataset.r, id = t.dataset.id;
+  const swap = (arr, x, y) => { [arr[x], arr[y]] = [arr[y], arr[x]]; };
+  if (act === 'remove') change(s => s.sel.splice(i, 1));
+  else if (act === 'swap') change(s => swap(s.sel, r * 2, r * 2 + 1));
+  else if (act === 'cat') change(s => { s.cat[id] = t.dataset.cat; });
+  else if (act === 'pick') change(s => { const at = s.sel.indexOf(id); if (at >= 0) s.sel.splice(at, 1); else s.sel.push(id); });
+});
+
+$('notes').addEventListener('input', e => { state.notes = e.target.value; dirty = true; scheduleSave(1200); });
+
+$('copy').addEventListener('click', () => {
+  const text = summary();
+  const fallback = () => { $('copy-wrap').hidden = false; const o = $('copy-out'); o.value = text; o.focus(); o.select(); setStatus('Select the text under Notes and paste it into your reply to Estefano.', 'local'); };
+  try {
+    navigator.clipboard.writeText(text).then(() => setStatus('Copied. Paste it into your reply to Estefano.', 'saved'), fallback);
+  } catch { fallback(); }
+});
+
+// ---- Start: this device's copy first, then the shared store if this view has one.
+try { const v = localStorage.getItem(LOCAL_KEY); if (v) state = clean(JSON.parse(v)); } catch {}
+try { const v = localStorage.getItem(LOCAL_KEY + '-view'); if (v === 'all') document.getElementById('tab-all').click(); } catch {}
+render();
+setStatus('Your picks save on this device as you go. Use the same phone or computer each time.', 'idle');
+
+// GitHub Pages copy: picks stay in this browser; TJ sends them with Copy my picks.
+</script>
+</body>
+</html>
