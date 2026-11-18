@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-q9zh0QF2GWwBs+MPDNiigdgMHXATVF7r1XXVv5Uncak='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-h/L5eiGHi89o871h3I8dMZ8TFxLenGiGjluijJyEKgU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Noore Photo Picks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
 <style>
-/* Layout: the site's own black room. Header, two views (Selected Work pairs / every photo), notes, a pinned status bar. */
+/* Layout: the site's own black room. Header, two views (Selected Work pairs / every photo), a pinned status bar. */
 :root {
   --bg: #000; --fg: #f2efe9; --muted: #8d8a85; --line: #2a2826; --tile: #111; --raise: #0d0c0b;
   --ed: #c9b48f; --on-ed: #14110c; --br: #d9a3a8; --on-br: #1a0f10; --cut: #55524e;
@@ -76,9 +76,8 @@ h1 { font-family: var(--head); font-weight: 500; font-size: clamp(28px, 5vw, 46p
 .card .frame { position: relative; }
 .card .frame img { transition: opacity .2s ease, filter .2s ease; }
 .card.is-cut .frame img { opacity: .25; filter: grayscale(1); }
-.badge, .new { position: absolute; top: 8px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+.badge { position: absolute; top: 8px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
 .badge { left: 8px; background: var(--fg); color: var(--bg); }
-.new { right: 8px; background: var(--tag); color: var(--fg); }
 .meta { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--muted); min-width: 0; }
 .meta span:first-child { color: var(--fg); flex: none; }
 .meta span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -91,9 +90,8 @@ h1 { font-family: var(--head); font-weight: 500; font-size: clamp(28px, 5vw, 46p
 .pick { border: 1px solid var(--line); background: none; border-radius: 8px; padding: 7px 9px; font-size: 11px; color: var(--muted); text-align: left; }
 .pick[aria-pressed="true"] { border-color: var(--fg); color: var(--fg); }
 
-.notes { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
-.notes label { font-family: var(--head); font-size: 20px; }
-.notes p { margin: 0; color: var(--muted); max-width: 70ch; }
+.copy-block { margin-top: 48px; display: grid; gap: 10px; }
+.copy-block p { margin: 0; color: var(--muted); }
 textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; background: var(--raise); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: inherit; }
 
 .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--scrim); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
@@ -128,8 +126,6 @@ textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; ba
   <button class="tab" id="tab-all" role="tab" aria-selected="false" data-view="all">All photos<span class="n" id="n-all"></span></button>
   <div class="filters" id="filters" hidden>
     <button class="chip" data-filter="all" aria-pressed="true">All</button>
-    <button class="chip" data-filter="b2" aria-pressed="false">Second batch</button>
-    <button class="chip" data-filter="b1" aria-pressed="false">First batch</button>
     <button class="chip" data-filter="editorial" aria-pressed="false">Editorial</button>
     <button class="chip" data-filter="branding" aria-pressed="false">Branding</button>
     <button class="chip" data-filter="cut" aria-pressed="false">Cut</button>
@@ -142,18 +138,13 @@ textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; ba
     <div class="pairs" id="pairs"></div>
   </section>
   <section class="view" id="view-all" hidden>
-    <p class="hint">Put each photo in Editorial or Branding, or <b>Cut</b> it to keep it off the site. Tap <b>+ Selected Work</b> to add it to the next open spot in your pairs: the first photo starts Pair 1, the second completes it, the third starts Pair 2. “New” marks the second batch. Cut photos stay here, greyed out, in case you change your mind.</p>
+    <p class="hint">Put each photo in Editorial or Branding, or <b>Cut</b> it to keep it off the site. Tap <b>+ Selected Work</b> to add it to the next open spot in your pairs: the first photo starts Pair 1, the second completes it, the third starts Pair 2. Cut photos stay here, greyed out, in case you change your mind.</p>
     <div class="grid" id="grid"></div>
   </section>
 
-  <section class="notes">
-    <label for="notes">Notes for Estefano</label>
-    <p>Anything else: a photo that should be the first thing people see, a crop, a shoot name, a pair you're unsure about.</p>
-    <textarea id="notes" placeholder="e.g. Open with the feathers pair. The red activewear shoot needs the brand's name."></textarea>
-    <div id="copy-wrap" hidden>
-      <p>Copying was blocked here. Select this text and paste it into your reply to Estefano:</p>
-      <textarea id="copy-out" class="copy-out" readonly></textarea>
-    </div>
+  <section class="copy-block" id="copy-wrap" hidden>
+    <p>Copying was blocked here. Select this text and paste it into your reply to Estefano:</p>
+    <textarea id="copy-out" class="copy-out" readonly></textarea>
   </section>
 </main>
 
@@ -222,12 +213,12 @@ function renderPairs() {
 }
 
 function renderGrid() {
-  const list = ORDER.filter(p => filter === 'all' || (filter === 'b1' && p.batch === 1) || (filter === 'b2' && p.batch === 2) || state.cat[p.id] === filter);
+  const list = ORDER.filter(p => filter === 'all' || state.cat[p.id] === filter);
   $('grid').innerHTML = list.length ? list.map((p, i) => {
     const c = state.cat[p.id], at = state.sel.indexOf(p.id);
     const seg = ['editorial', 'branding', 'cut'].map(k => `<button data-act="cat" data-id="${p.id}" data-cat="${k}" aria-pressed="${c === k}">${k === 'cut' ? 'Cut' : LABEL[k]}</button>`).join('');
     return `<div class="card${c === 'cut' ? ' is-cut' : ''}">
-      <div class="frame">${img(p, i < 8)}${at >= 0 ? `<span class="badge">Pair ${Math.floor(at / 2) + 1}</span>` : ''}${p.batch === 2 ? '<span class="new">New</span>' : ''}</div>
+      <div class="frame">${img(p, i < 8)}${at >= 0 ? `<span class="badge">Pair ${Math.floor(at / 2) + 1}</span>` : ''}</div>
       <div class="meta"><span>${short(p)}</span><span>${p.shoot}</span></div>
       <div class="seg" role="group" aria-label="Category for ${short(p)}">${seg}</div>
       <button class="pick" data-act="pick" data-id="${p.id}" aria-pressed="${at >= 0}">${at >= 0 ? `✓ Pair ${Math.floor(at / 2) + 1}, ${at % 2 ? 'right' : 'left'}` : '+ Selected Work'}</button>
@@ -245,8 +236,6 @@ function renderCounts() {
 function render() {
   if (view === 'pairs') renderPairs(); else renderGrid();
   renderCounts();
-  const notes = $('notes');
-  if (document.activeElement !== notes && notes.value !== state.notes) notes.value = state.notes;
 }
 
 function change(fn) {
@@ -273,7 +262,6 @@ function summary() {
     const ids = ORDER.filter(p => state.cat[p.id] === k).map(short);
     lines.push('', `${LABEL[k].toUpperCase()} (${ids.length})`, ids.join(', ') || '(none)');
   }
-  if (state.notes.trim()) lines.push('', 'NOTES', state.notes.trim());
   return lines.join('\n');
 }
 
@@ -307,7 +295,6 @@ document.addEventListener('click', e => {
   else if (act === 'pick') change(s => { const at = s.sel.indexOf(id); if (at >= 0) s.sel.splice(at, 1); else s.sel.push(id); });
 });
 
-$('notes').addEventListener('input', e => { state.notes = e.target.value; dirty = true; scheduleSave(1200); });
 
 $('copy').addEventListener('click', () => {
   const text = summary();
