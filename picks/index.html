@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-qrcam/1BqJwKQGIRHpEtJMnQrUIWwqotu6mg8n688xQ='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ZWm6Z2fHb15jBnvfuFtviB83S51k+cHsbap7t90M/fs='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Noore Photo Picks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,7 @@ h1 { font-family: var(--head); font-weight: 500; font-size: clamp(28px, 5vw, 46p
 .lede { max-width: 64ch; color: var(--muted); margin: 0; }
 .lede b { color: var(--fg); font-weight: 400; }
 .viewbar { margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); padding: 10px max(16px, env(safe-area-inset-left, 0px)); background: var(--fg); color: var(--bg); font-size: 12px; text-align: center; }
-body.view-only .seg, body.view-only .pick, body.view-only [data-act="swap"], body.view-only [data-act="remove"], body.view-only .lede, body.view-only .hint { display: none !important; }
+body.view-only .seg, body.view-only .pick, body.view-only [data-act="swap"], body.view-only .handle, body.view-only [data-act="up"], body.view-only [data-act="down"], body.view-only [data-act="remove"], body.view-only .lede, body.view-only .hint { display: none !important; }
 
 .tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding-block: 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
 .tab { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 7px 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -71,6 +71,20 @@ body.view-only .seg, body.view-only .pick, body.view-only [data-act="swap"], bod
 .icon:disabled { opacity: .3; cursor: default; }
 .text-btn { border: 1px solid var(--line); background: none; border-radius: 6px; height: 28px; padding: 0 10px; font-size: 11px; color: var(--muted); }
 .text-btn:hover { color: var(--fg); border-color: var(--fg); }
+
+/* Reordering pairs: drag the ⠿ handle (mouse or finger), or use ↑ ↓. While dragging, pairs shrink so the whole list fits on screen. */
+.handle { border: 1px solid var(--line); background: none; border-radius: 6px; height: 36px; padding: 0 12px; display: inline-flex; align-items: center; gap: 8px; color: var(--fg); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.handle .dots { font-size: 16px; letter-spacing: 0; }
+.handle:hover:not(:disabled) { border-color: var(--fg); }
+.handle:disabled { opacity: .3; cursor: default; }
+.pair { transition: box-shadow .2s ease; }
+.pair.dragging { position: relative; z-index: 4; box-shadow: 0 18px 50px rgb(0 0 0 / .8); outline: 1px solid var(--fg); outline-offset: 8px; background: var(--bg); cursor: grabbing; }
+.pair.moved { animation: moved 1.4s ease; }
+@keyframes moved { from { outline: 1px solid var(--fg); outline-offset: 8px; } to { outline: 1px solid transparent; outline-offset: 8px; } }
+body.is-dragging { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+body.is-dragging .pairs { gap: 18px; }
+body.is-dragging .pair { width: min(100%, 360px); }
+body.is-dragging .slot-foot, body.is-dragging .pair-head .text-btn, body.is-dragging .pair-head .icon { visibility: hidden; }
 
 /* All photos */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 24px 14px; }
@@ -136,6 +150,7 @@ textarea { width: 100%; max-width: 100%; min-height: 120px; resize: vertical; ba
 <main class="wrap">
   <section class="view" id="view-pairs">
     <p class="hint">Pairs are made in <b>All photos</b>. Tap <b>+ Selected Work</b> on a photo and it becomes the left side of <b>Pair 1</b>. The next photo you pick fills the right side of Pair 1, the one after that starts Pair 2, and so on. Pairs show here top to bottom, in the order visitors scroll. Use <b>⇄ Swap</b> to switch a pair's left and right, and <b>×</b> to take a photo out.</p>
+    <p class="hint"><b>To change the order:</b> grab a pair by <b>⠿ Move</b> and drag it up or down (on a phone, hold and drag with your finger). Put your favorite at the top. You can also tap <b>↑</b> or <b>↓</b> to move a pair one spot.</p>
     <div class="pairs" id="pairs"></div>
   </section>
   <section class="view" id="view-all" hidden>
@@ -201,7 +216,12 @@ function renderPairs() {
           <button class="icon" data-act="remove" data-i="${i}" aria-label="Take ${short(p)} off Selected Work">×</button>
         </div></div>`;
     };
-    out.push(`<div class="pair"><div class="pair-head"><span class="grow">Pair ${r + 1}</span>
+    const full = !!b, last = r >= Math.floor(sel.length / 2) - 1;
+    out.push(`<div class="pair" data-r="${r}"${full ? ' data-full' : ''}><div class="pair-head">
+      <button class="handle" data-r="${r}" ${full ? '' : 'disabled'} aria-label="Drag pair ${r + 1} up or down to move it"><span class="dots" aria-hidden="true">⠿</span>Move</button>
+      <span class="grow">Pair ${r + 1}</span>
+      <button class="icon" data-act="up" data-r="${r}" ${full && r > 0 ? '' : 'disabled'} aria-label="Move pair ${r + 1} up one spot">↑</button>
+      <button class="icon" data-act="down" data-r="${r}" ${full && !last ? '' : 'disabled'} aria-label="Move pair ${r + 1} down one spot">↓</button>
       <button class="text-btn" data-act="swap" data-r="${r}" ${b ? '' : 'disabled'} aria-label="Swap the two photos in pair ${r + 1}">⇄ Swap</button></div>
       <div class="pair-row">${slot(a, r * 2)}${slot(b, r * 2 + 1)}</div></div>`);
   }
@@ -313,7 +333,84 @@ document.addEventListener('click', e => {
   else if (act === 'swap') change(s => swap(s.sel, r * 2, r * 2 + 1));
   else if (act === 'cat') change(s => { s.cat[id] = t.dataset.cat; });
   else if (act === 'pick') change(s => { const at = s.sel.indexOf(id); if (at >= 0) s.sel.splice(at, 1); else s.sel.push(id); });
+  else if (act === 'up' || act === 'down') {
+    const n = Math.ceil(state.sel.length / 2), order = [...Array(n).keys()], to = act === 'up' ? r - 1 : r + 1;
+    [order[r], order[to]] = [order[to], order[r]];
+    reorderPairs(order, to);
+  }
 });
+
+// ---- Reordering whole pairs. `order` lists the old pair numbers in their new order; a half-filled last pair always stays last.
+function reorderPairs(order, landed) {
+  if (order.every((r, i) => r === i)) return;
+  change(s => {
+    const pairs = [];
+    for (let i = 0; i < s.sel.length; i += 2) pairs.push(s.sel.slice(i, i + 2));
+    s.sel = order.map(r => pairs[r]).flat();
+  });
+  const el = $('pairs').children[landed];
+  if (el) {
+    el.classList.add('moved');
+    el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    el.querySelector('.handle:not(:disabled)')?.focus({ preventScroll: true });
+  }
+}
+
+// Drag: pointer events, so it works the same with a mouse, a trackpad and a finger.
+let drag = null;
+document.addEventListener('pointerdown', e => {
+  const h = e.target.closest('.handle');
+  if (!h || h.disabled || VIEW_ONLY || drag || e.button > 0) return;
+  e.preventDefault();
+  const el = h.closest('.pair');
+  document.body.classList.add('is-dragging');
+  el.classList.add('dragging');
+  // Pairs just shrank: scroll so the grabbed pair sits under the pointer again.
+  const r0 = el.getBoundingClientRect();
+  scrollBy(0, r0.top + 18 - e.clientY);
+  drag = { el, id: e.pointerId, y: e.clientY, grab: 18, raf: 0 };
+  try { h.setPointerCapture(e.pointerId); } catch {}
+  drag.raf = requestAnimationFrame(dragFrame);
+});
+document.addEventListener('pointermove', e => { if (drag && e.pointerId === drag.id) { drag.y = e.clientY; e.preventDefault(); place(); } }, { passive: false });
+document.addEventListener('pointerup', e => { if (drag && e.pointerId === drag.id) { drag.y = e.clientY; place(); endDrag(true); } });
+document.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.id) endDrag(false); });
+addEventListener('keydown', e => { if (drag && e.key === 'Escape') endDrag(false); });
+
+function dragFrame() {
+  if (!drag) return;
+  const y = drag.y;
+  // Scroll the page when the pointer nears the top or bottom edge.
+  const edge = 90, top = 70, h = innerHeight - 70;
+  if (y < top + edge) scrollBy(0, -Math.ceil((top + edge - y) / 6));
+  else if (y > h - edge) scrollBy(0, Math.ceil((y - (h - edge)) / 6));
+  place();
+  drag.raf = requestAnimationFrame(dragFrame);
+}
+function place() {
+  const { el, y } = drag, list = $('pairs');
+  // Place the pair in the list where the pointer is, measured without the drag offset.
+  el.style.transform = '';
+  const others = [...list.querySelectorAll('.pair[data-full]')].filter(p => p !== el);
+  const before = others.find(p => { const b = p.getBoundingClientRect(); return y < b.top + b.height / 2; });
+  if (before) { if (el.nextElementSibling !== before) list.insertBefore(el, before); }
+  else if (others.length) { const lastFull = others[others.length - 1]; if (lastFull.nextElementSibling !== el) lastFull.after(el); }
+  const natural = el.getBoundingClientRect().top;
+  el.style.transform = `translateY(${y - drag.grab - natural}px)`;
+}
+
+function endDrag(keep) {
+  const { el, raf } = drag;
+  cancelAnimationFrame(raf);
+  drag = null;
+  el.style.transform = '';
+  el.classList.remove('dragging');
+  document.body.classList.remove('is-dragging');
+  const els = [...$('pairs').children];
+  const order = els.map(p => +p.dataset.r);
+  if (keep) reorderPairs(order, els.indexOf(el));
+  if (!keep || order.every((r, i) => r === i)) { render(); $('pairs').children[+el.dataset.r]?.scrollIntoView({ block: 'center' }); }
+}
 
 
 // ---- Start: this device's backup first, then Estefano's store when the link has its key.
