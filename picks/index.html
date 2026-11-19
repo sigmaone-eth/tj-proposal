@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-8V5jmMKWcXKqb8Kgl1DBptUy2r3C0uyiYwGfq5/sT8k='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-gjmN9mZKXpWk8xhZGDnoQwBegs6Q1VjlFwXaZNt6LkU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://noore-api.estefanogomez23.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Noore Photo Picks</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,8 +54,8 @@ body.view-only .seg, body.view-only .pick, body.view-only [data-act="swap"], bod
 .hint b { color: var(--fg); font-weight: 400; }
 
 /* Pairs: exactly how Selected Work reads on the site, two photos per row. */
-.pairs { display: grid; gap: 44px; }
-.pair { display: grid; gap: 10px; width: min(100%, 460px); margin: 0 auto; }
+.pairs { display: grid; gap: 28px; }
+.pair { display: grid; gap: 10px; width: min(100%, 300px); margin: 0 auto; }
 .pair-head { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 .pair-head .grow { flex: 1; }
 .pair-row { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 1.4vw, 18px); }
@@ -82,8 +82,8 @@ body.view-only .seg, body.view-only .pick, body.view-only [data-act="swap"], bod
 .pair.moved { animation: moved 1.4s ease; }
 @keyframes moved { from { outline: 1px solid var(--fg); outline-offset: 8px; } to { outline: 1px solid transparent; outline-offset: 8px; } }
 body.is-dragging { cursor: grabbing; user-select: none; -webkit-user-select: none; }
-body.is-dragging .pairs { gap: 18px; }
-body.is-dragging .pair { width: min(100%, 260px); }
+body.is-dragging .pairs { gap: 14px; }
+body.is-dragging .pair { width: min(100%, 220px); }
 body.is-dragging .slot-foot, body.is-dragging .pair-head .text-btn, body.is-dragging .pair-head .icon { visibility: hidden; }
 
 /* All photos */
@@ -211,7 +211,7 @@ function renderPairs() {
     const slot = (id, i) => {
       if (!id) return `<div class="slot empty"><div class="frame">${sel.length ? 'Needs a partner. Pick one in All photos.' : (i === 0 ? 'No pairs yet. In All photos, tap + Selected Work to start Pair 1.' : 'The second photo you pick goes here.')}</div></div>`;
       const p = byId.get(id);
-      return `<div class="slot"><div class="frame">${img(p, r < 2, '(max-width: 500px) 48vw, 230px')}</div>
+      return `<div class="slot"><div class="frame">${img(p, r < 2, '150px')}</div>
         <div class="slot-foot"><span class="name">${short(p)} · ${p.shoot}</span>
           <button class="icon" data-act="remove" data-i="${i}" aria-label="Take ${short(p)} off Selected Work">×</button>
         </div></div>`;
